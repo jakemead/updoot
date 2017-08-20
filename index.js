@@ -2,8 +2,7 @@ const twitter = require('twitter');
 const snoowrap = require('snoowrap');
 const fs = require('fs');
 const { env } = process;
-const circlejerk = 'circlejerk';
-
+const sub = 'circlejerk';
 
 
 const r = new snoowrap({
@@ -22,53 +21,57 @@ const t = new twitter({
 run();
 
 async function run() {
-    const posts = await r.getSubreddit(circlejerk).getHot({ limit: 15 });
+    const posts = await r.getSubreddit(sub).getHot({ limit: 15 });
 
     for (p in posts) {
         const cur = posts[p];
 
-        // if this post is tweetable, tweet it and bail out of the loop
+        // if this post is tweetable, tweet it and return
         if (twitterWorthy(cur)) {
-            console.log(`Post found!`);
-            t.post('statuses/update', { status: cur.title })
+            t.post('statuses/update', { status: cur.title }) //man, i hate javascript promises
                 .then(function (tweet) {
-                    console.log(`TWEET: ${cur.title}`);
-                    record(cur);
-                    break;
+                    console.log('Tweet sent, recording to file...');
+                    fs.writeFile(`${__dirname}/cemetary.txt`, cur.id, function (err) {
+                        if (err) {
+                            return console.log(err);
+                        }
+
+                        console.log(`${cur.id} written to file!`);
+                        console.log('Done');
+                        return;
+                    });
                 })
                 .catch(function (error) {
-                    throw error;
-                })
+                    console.log(error);
+                    return;
+                });
         }
     }
-    console.log('Done');
-    function twitterWorthy(post) {
+    async function twitterWorthy(post) {
         // check if title is short enough, then check if it already been posted
 
         if (post && post.title && post.title.length <= 140) {
 
             console.log(`Testing: ${post.title}`);
-            // now check file to see if its already been tweeted
-            const { id } = post;
 
-            fs.readFile(`${__dirname}/cemetary.txt`, 'utf8', (err, data) => {
-                if (err) { return false }
-
-                // parse file for existing id
-                return data.indexOf(id) >= 0;
+            // promisify fs.readFile() so i can do async/await on fs
+            let filePromise = new Promise((resolve, reject) => {
+                fs.readFile(`${__dirname}/cemetary.txt`, 'utf8', (err, res) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve(res);
+                    }
+                })
             });
+
+            // now check file to see if its already been tweeted
+            const file = await filePromise;
+
+            // parse file for existing id, indexOf returns -1 if id is not in file (true)
+            const { id } = post;
+            return file.indexOf(id) === -1;
         }
         return false;
-    }
-
-    function record(post) {
-        var fs = require('fs');
-        fs.writeFile("/tmp/test", "Hey there!", function (err) {
-            if (err) {
-                return console.log(err);
-            }
-
-            console.log("The file was saved!");
-        });
     }
 }
