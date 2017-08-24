@@ -4,6 +4,14 @@ const fs = require('fs');
 const { env } = process;
 const sub = 'circlejerk';
 
+process.env.clientId = 'c74Q1dKouiMGNA'
+process.env.clientSecret = 'M2UJaQvXhctXqC_7ItNLOxTpyCQ'
+process.env.refreshToken = '33133423-kXmv7O67gfM0Ce8gp6jIbjV6Hk4'
+process.env.userAgent = '9A25PnHxZY7nWQ'
+process.env.consumer_key = 'CPbb2wjGYuZO6IIYlVHbnbF27'
+process.env.consumer_secret = 'usDXlTFf1ssGqrYDiitv8hJyp6MyBHaVza3l2A2bY6laMOgwpw'
+process.env.access_token_key = '898926970427375616-XPeUpKzTjLLYj6bVwcOTNlbAXdQ4i4T'
+process.env.access_token_secret = 'G8e7DSdzFsextIpmALawhXIiBNMWwGQBIj4gCsurRkjGm'
 
 const r = new snoowrap({
     clientId: env.clientId,
@@ -21,54 +29,35 @@ const t = new twitter({
 run();
 
 async function run() {
-    const posts = await r.getSubreddit(sub).getHot({ limit: 15 });
+    let posts;
+    try {
+        posts = await r.getSubreddit(sub).getHot({ limit: 15 });
+    } catch (err) {
+        throw err;
+    }
 
+    // iterate thru posts to find one that hasnt been tweeted
+    // then tweet that post and exit;
     for (p in posts) {
         const cur = posts[p];
-
         // if this post is tweetable, tweet it and return
         if (twitterWorthy(cur)) {
-            t.post('statuses/update', { status: cur.title }) //man, i hate javascript promises
-                .then(function (tweet) {
-                    console.log('Tweet sent, recording to file...');
-                    fs.writeFile(`${__dirname}/cemetary.txt`, cur.id, function (err) {
-                        if (err) {
-                            return console.log(err);
-                        }
-
-                        console.log(`${cur.id} written to file!`);
-                        console.log('Done');
-                        return;
-                    });
-                })
-                .catch(function (error) {
-                    console.log(error);
-                    return;
-                });
+            console.log(`Tweeting ${cur.title}`);
+            t.post('statuses/update', { status: cur.title }, (err, tweet, resp) => {
+                if (err) console.log(err);;
+                console.log('Tweet sent, recording to file...');
+                fs.appendFileSync(`${__dirname}/cemetary.txt`, `${cur.id} `);
+                console.log(`${cur.id} saved`);
+                return;
+            });
         }
     }
-    async function twitterWorthy(post) {
+
+    function twitterWorthy(post) {
         // check if title is short enough, then check if it already been posted
-
         if (post && post.title && post.title.length <= 140) {
-
-            console.log(`Testing: ${post.title}`);
-
-            // promisify fs.readFile() so i can do async/await on fs
-            let filePromise = new Promise((resolve, reject) => {
-                fs.readFile(`${__dirname}/cemetary.txt`, 'utf8', (err, res) => {
-                    if (err) {
-                        reject(err);
-                    } else {
-                        resolve(res);
-                    }
-                })
-            });
-
-            // now check file to see if its already been tweeted
-            const file = await filePromise;
-
-            // parse file for existing id, indexOf returns -1 if id is not in file (true)
+            let file = fs.readFileSync(`${__dirname}/cemetary.txt`, 'utf8');
+            // parse file for existing id, indexOf returns -1 if id is not in file 
             const { id } = post;
             return file.indexOf(id) === -1;
         }
