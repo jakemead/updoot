@@ -34,17 +34,15 @@ async function run() {
         // if this post is tweetable, tweet it and return
         if (twitterWorthy(cur)) {
             console.log(`Tweeting ${cur.title}`);
-            t.post('statuses/update', { status: cur.title }, (err, tweet, resp) => {
-                if (err) console.log(err);;
-                console.log('Tweet sent, recording to file...');
-                fs.appendFileSync(`${__dirname}/cemetary.txt`, `${cur.id} `);
-                console.log(`${cur.id} saved`);
-                return;
-            });
+            t.post('statuses/update', { status: cur.title });
+            console.log('Tweet sent, recording to file...');
+            fs.appendFileSync(`${__dirname}/cemetary.txt`, `${cur.id} `);
+            console.log(`${cur.id} saved`);
+            process.exit();
         }
     }
 
-    function twitterWorthy(post) {
+   function twitterWorthy(post) {
         // check if title is short enough, then check if it already been posted
         if (post && post.title && post.title.length <= 140) {
             let file = fs.readFileSync(`${__dirname}/cemetary.txt`, 'utf8');
