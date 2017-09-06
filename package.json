@@ -12,5 +12,8 @@
   "dependencies": {
     "snoowrap": "^1.14.2",
     "twitter": "^1.7.1"
+  },
+  "engines": {
+    "node": ">= 7.6.0"
   }
 }
