@@ -2,7 +2,7 @@ const twitter = require('twitter');
 const snoowrap = require('snoowrap');
 const fs = require('fs');
 const { env } = process;
-const sub = 'dankchristianmemes';
+const sub = 'circlejerk';
 
 const r = new snoowrap({
     clientId: env.clientId,
@@ -34,7 +34,7 @@ async function run() {
         // if this post is tweetable, tweet it and return
         if (twitterWorthy(cur)) {
             console.log(`Tweeting ${cur.title}`);
-            await t.post('statuses/update', { status: cur.title });
+            await t.post('statuses/update', { status: `BREAKING NEWS: DONALD TRUMP BANS HURRICANE JOSE FROM IMMIGRATING TO THE USA` });
             console.log('Tweet sent, recording to file...');
             fs.appendFileSync(`${__dirname}/cemetary.txt`, `${cur.id} `);
             console.log(`${cur.id} saved`);
