@@ -33,9 +33,10 @@ async function run() {
         const cur = posts[p];
         // if this post is tweetable, tweet it and return
         if (twitterWorthy(cur)) {
-            console.log(`Tweeting ${cur.title}`);
-            await t.post('statuses/update', { status: `BREAKING NEWS: DONALD TRUMP BANS HURRICANE JOSE FROM IMMIGRATING TO THE USA` });
+            console.log(`Tweeting: ${cur.title}`);
+            await t.post('statuses/update', { status: cur.title });
             console.log('Tweet sent, recording to file...');
+            
             fs.appendFileSync(`${__dirname}/cemetary.txt`, `${cur.id} `);
             console.log(`${cur.id} saved`);
             process.exit();
@@ -50,6 +51,8 @@ async function run() {
             const { id } = post;
             return file.indexOf(id) === -1;
         }
+
+        // if post.title is too long, return false
         return false;
     }
 }
